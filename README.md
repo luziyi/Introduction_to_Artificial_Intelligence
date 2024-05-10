@@ -1,2 +1,2 @@
-# CodeSpace-Blank
+# CodeSpace
 A Blank CodeSpace for personall use.
