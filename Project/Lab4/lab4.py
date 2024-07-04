@@ -9,7 +9,7 @@ class GCN(torch.nn.Module): # 定义GCN模型
         super(GCN, self).__init__() # 调用父类的初始化函数
         hidden_channels = 32 # 隐藏层特征数为32
         # 隐藏层特征数是指在神经网络中隐藏层的神经元数量。隐藏层特征数的选择对神经网络的性能和表达能力有很大影响。隐藏层特征数的主要作用是决定神经网络的复杂度和表示能力。较少的隐藏层特征数可能导致神经网络无法捕捉到输入数据中的复杂模式和关系，从而导致欠拟合。而较多的隐藏层特征数可能导致神经网络过度拟合训练数据，无法泛化到新的未见过的数据。
-        self.conv1 = GCNConv(num_node_features, hidden_channels) # 输入特征数为num_node_features，输出特征数为hidden_channels
+        self.conv1 = GCNConv(num_node_features, hidden_channels) # 输入特征数为num_node_features，输出特征数为hidden_channels 构建第一层图卷积层
         self.conv2 = GCNConv(hidden_channels, num_classes) # 输入特征数为hidden_channels，输出特征数为num_classes
         self.norm = torch.nn.BatchNorm1d(hidden_channels) # 一维批标准化层，输入特征数为hidden_channels
 
@@ -20,6 +20,7 @@ class GCN(torch.nn.Module): # 定义GCN模型
         x = F.relu(x) # ReLU激活函数 通过ReLU激活函数对输出特征x进行非线性变换
         x = F.dropout(x, training=self.training) # dropout层 通过Dropout层对输出特征x进行随机失活操作
         x = self.conv2(x, edge_index) # 第二层GCN
+        x = F.relu(x)
         return x
 
 
@@ -35,7 +36,7 @@ def train(model, data, device):  # 模型，数据，设备
     optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=1e-4)  # Adam优化器 学习率0.01  权重衰减1e-4 根据定义的优化算法和损失函数，自动调整模型的参数，以最小化损失函数的值。在深度学习中，优化器的目标是通过反向传播算法来计算梯度，并使用梯度下降的方法来更新模型的参数。model.parameters()表示要优化的模型的参数，lr表示学习率，即每次更新参数时的步长。另外，weight_decay参数用于控制L2正则化项的权重衰减。
     loss_function = torch.nn.CrossEntropyLoss().to(device)  # 交叉熵损失函数计算损失值 将softmax函数和负对数似然损失（negative log likelihood loss）结合在一起。在计算损失时，它首先对模型的原始输出（也就是logits）应用softmax函数，将输出转换为概率分布，然后计算真实标签和预测概率分布之间的负对数似然损失
     model.train() # 训练模式
-    for epoch in range(200): # 迭代200次
+    for epoch in range(200): # 迭代200轮
         out = model(data)  # 前向传播
         optimizer.zero_grad()  # 梯度清零
         loss = loss_function(out[data.train_mask], data.y[data.train_mask])  #  计算损失值
@@ -55,11 +56,11 @@ def test(model, data):
 
 def main():
     print('Cora' + ' dataset:')
-    data, num_node_features, num_classes = load_data('Cora')
+    data, num_node_features, num_classes = load_data('Cora')  # 加载数据
     print(data, num_node_features, num_classes)
     _device = 'cpu'
     device = torch.device(_device)
-    model = GCN(num_node_features, num_classes).to('cpu')
+    model = GCN(num_node_features, num_classes).to('cpu') # 创建模型
     train(model, data, device)
     test(model, data)
 
